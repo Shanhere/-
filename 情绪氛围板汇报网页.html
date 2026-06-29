@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的时刻 — 个人情绪氛围板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #fcf9f5;
+            --card-bg: #f5efe8;
+            --text: #3c2e1e;
+            --text-light: #7a6a5b;
+            --accent: #d4c5b2;
+            --shadow: rgba(60, 46, 30, 0.06);
+            --radius: 20px;
+            --font: 'Georgia', 'Times New Roman', 'Songti SC', serif;
+        }
+
+        html,
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .slide {
+            display: none;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            padding: 3vh 4vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.45s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 10;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            z-index: 10;
+        }
+
+        .slide-inner {
+            max-width: 1200px;
+            width: 100%;
+            margin: auto 0;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 4vh 5vw;
+            box-shadow: 0 8px 32px var(--shadow);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 20;
+        }
+
+        .slide-cover,
+        .slide-end {
+            justify-content: center;
+        }
+
+        .slide-cover .slide-inner,
+        .slide-end .slide-inner {
+            background: transparent;
+            box-shadow: none;
+            text-align: center;
+            padding: 0;
+        }
+
+        .slide-cover h1 {
+            font-size: clamp(3.2rem, 10vw, 5.6rem);
+            font-weight: 400;
+            letter-spacing: 0.06em;
+            color: var(--text);
+            margin-bottom: 0.4rem;
+        }
+
+        .slide-cover .subtitle {
+            font-size: clamp(1.3rem, 3vw, 2.2rem);
+            color: var(--text-light);
+            font-style: italic;
+            margin-bottom: 2rem;
+        }
+
+        .slide-cover .meta {
+            font-size: 1rem;
+            color: var(--text-light);
+            border-top: 1px solid var(--accent);
+            padding-top: 1.5rem;
+            display: inline-block;
+        }
+
+        .slide-end .end-title {
+            font-size: clamp(2.6rem, 6vw, 4.2rem);
+            font-weight: 300;
+            color: var(--text);
+            margin-bottom: 0.8rem;
+        }
+
+        .slide-end .end-sub {
+            font-size: clamp(1.2rem, 2vw, 1.8rem);
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        .slide-end .end-line {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            width: 40%;
+            border-top: 1px solid var(--accent);
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .page-title {
+            font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--text);
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.4rem;
+        }
+
+        .section-title {
+            font-size: clamp(1.15rem, 1.8vw, 1.5rem);
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 0.8rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .body-text {
+            font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+            line-height: 1.9;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .quote-line {
+            font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+            line-height: 1.9;
+            color: var(--text);
+            font-weight: 600;
+            margin: 0.6rem 0;
+        }
+
+        .text-card {
+            background: rgba(255, 248, 240, 0.5);
+            border-radius: 12px;
+            padding: 1.2rem 1.6rem;
+            margin: 0.6rem 0;
+            text-align: left;
+        }
+
+        .split-layout {
+            display: flex;
+            gap: 2.8rem;
+            align-items: flex-start;
+            margin: 0.8rem 0;
+        }
+
+        .split-text {
+            flex: 0 0 56%;
+        }
+
+        .split-image {
+            flex: 0 0 40%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .split-image .img-wrap {
+            width: 100%;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #f0ebe1;
+            box-shadow: 0 4px 12px var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+            z-index: 30;
+        }
+
+        .split-image .img-wrap img {
+            width: 100%;
+            height: auto;
+            display: block;
+            pointer-events: auto;
+        }
+
+        .kawauchi-layout {
+            display: flex;
+            gap: 2.8rem;
+            align-items: flex-start;
+            margin: 0.8rem 0;
+        }
+
+        .kawauchi-left {
+            flex: 0 0 56%;
+        }
+
+        .kawauchi-right {
+            flex: 0 0 40%;
+        }
+
+        .kawauchi-right .img-wrap {
+            width: 100%;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #f0ebe1;
+            box-shadow: 0 4px 12px var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+            z-index: 30;
+        }
+
+        .kawauchi-right .img-wrap img {
+            width: 100%;
+            height: auto;
+            display: block;
+            pointer-events: auto;
+        }
+
+        .full-image-page .slide-inner {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3vh 3vw;
+        }
+
+        .full-image-page .img-wrap {
+            width: 98%;
+            max-width: 1200px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 28px var(--shadow);
+            background: #f0ebe1;
+            cursor: pointer;
+            position: relative;
+            z-index: 30;
+        }
+
+        .full-image-page .img-wrap img {
+            width: 100%;
+            height: auto;
+            display: block;
+            pointer-events: auto;
+        }
+
+        .full-image-page .flow-caption {
+            margin-top: 0.8rem;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            text-align: center;
+            letter-spacing: 0.04em;
+        }
+
+        .image-row {
+            display: flex;
+            gap: 2rem;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .image-row .img-wrap {
+            flex: 0 0 38%;
+            max-width: 360px;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px var(--shadow);
+            background: #f0ebe1;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+            z-index: 30;
+        }
+
+        .image-row .img-wrap img {
+            width: 100%;
+            height: auto;
+            display: block;
+            pointer-events: auto;
+        }
+
+        .image-row-caption {
+            margin-top: 0.6rem;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            text-align: center;
+            width: 100%;
+        }
+
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(60, 46, 30, 0.88);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox img {
+            max-width: 88vw;
+            max-height: 88vh;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            object-fit: contain;
+        }
+
+        .nav-hint {
+            position: fixed;
+            bottom: 18px;
+            right: 30px;
+            font-size: 0.7rem;
+            color: var(--text-light);
+            opacity: 0.35;
+            z-index: 999;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 3px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+            letter-spacing: 0.04em;
+        }
+
+        .progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--accent);
+            z-index: 999;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .nav-btn {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 100px;
+            background: rgba(212, 197, 178, 0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: background 0.2s, opacity 0.2s;
+            backdrop-filter: blur(4px);
+            border: none;
+            font-size: 1.8rem;
+            color: var(--text-light);
+            opacity: 0.5;
+            user-select: none;
+        }
+
+        .nav-btn:hover {
+            background: rgba(212, 197, 178, 0.35);
+            opacity: 0.9;
+        }
+
+        .nav-btn.left {
+            left: 12px;
+        }
+
+        .nav-btn.right {
+            right: 12px;
+        }
+
+        .nav-btn .arrow {
+            pointer-events: none;
+            font-size: 1.8rem;
+            line-height: 1;
+            font-family: 'Georgia', serif;
+            font-weight: 300;
+        }
+
+        .slide::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .slide::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .slide::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        @media (max-width: 700px) {
+            .split-layout {
+                flex-direction: column;
+            }
+            .split-text,
+            .split-image {
+                flex: 1 1 100%;
+            }
+            .split-image {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .split-image .img-wrap {
+                flex: 1 1 45%;
+            }
+            .kawauchi-layout {
+                flex-direction: column;
+            }
+            .kawauchi-left,
+            .kawauchi-right {
+                flex: 1 1 100%;
+            }
+            .full-image-page .img-wrap {
+                width: 98%;
+            }
+            .slide-inner {
+                padding: 3vh 4vw;
+            }
+            .slide-cover h1 {
+                font-size: 2.8rem;
+            }
+            .image-row .img-wrap {
+                flex: 0 0 80%;
+                max-width: 300px;
+            }
+            .slide-end .end-line {
+                width: 60%;
+            }
+            .nav-btn {
+                width: 36px;
+                height: 70px;
+                font-size: 1.4rem;
+            }
+            .nav-btn.left {
+                left: 6px;
+            }
+            .nav-btn.right {
+                right: 6px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .split-image .img-wrap {
+                flex: 1 1 100%;
+            }
+            .nav-hint {
+                display: none;
+            }
+            .image-row .img-wrap {
+                flex: 0 0 90%;
+            }
+            .slide-end .end-line {
+                width: 80%;
+            }
+            .nav-btn {
+                width: 30px;
+                height: 60px;
+                font-size: 1rem;
+            }
+            .nav-btn .arrow {
+                font-size: 1rem;
+            }
+            .nav-btn.left {
+                left: 4px;
+            }
+            .nav-btn.right {
+                right: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress" id="progress"></div>
+
+    <div class="nav-btn left" id="navLeft">
+        <span class="arrow">◀</span>
+    </div>
+    <div class="nav-btn right" id="navRight">
+        <span class="arrow">▶</span>
+    </div>
+
+    <div class="lightbox" id="lightbox">
+        <img id="lightboxImg" src="" alt="放大预览">
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 0 · 封面 -->
+    <!-- ============================================================ -->
+    <section class="slide slide-cover active" data-index="0">
+        <div class="slide-inner">
+            <h1>我的时刻</h1>
+            <div class="subtitle">个人情绪氛围板</div>
+            <div class="meta">用图像理解自己 · 用分享连接他人</div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 1 · 第1件 · 1.1 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="1">
+        <div class="slide-inner">
+            <div class="page-title">第1件：我的议题</div>
+            <div class="section-title">1.1 我想做什么</div>
+
+            <div class="split-layout">
+                <div class="split-text">
+                    <div class="text-card">
+                        <div class="body-text">
+                            在社交媒体上，有一种常见的视觉形态——用户发布一系列风格相似、传递某种感受的图片，被称为“情绪板”或“审美积累”。它们不叙事，不讲故事，而是直接传递氛围。
+                        </div>
+                        <div class="body-text">
+                            我想做的是“我的时刻——个人情绪氛围板”。生活本身就是一个巨大的氛围板，在不同情绪状态下，我们注意到的事物、看待事物的角度都会不同——拍摄的照片、选择的滤镜，恰好反映了那一刻我们的心境。
+                        </div>
+                        <div class="body-text">
+                            如果说，我们在不同情绪下创作出的氛围图，能反映每个人眼中不同的“那一刻”，那我们所选的滤镜，是否能成为我们对情绪的可视化理解？
+                        </div>
+                    </div>
+                    <div class="quote-line">“这是一个每一个个体数据集都极具独特性的情况。但如果我们将所有独特相连，就能使共性像磁铁一样接在一起。”</div>
+                    <div class="quote-line">“这是一个为了相连而将每个人的独特性发挥到极致的概念。”</div>
+                </div>
+                <div class="split-image">
+                    <div class="img-wrap" onclick="openLightbox('./images/vibe1.png')">
+                        <img src="./images/vibe1.png" alt="情绪氛围图集示例">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 2 · 第1件 · 1.2 + 1.3 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="2">
+        <div class="slide-inner">
+            <div class="page-title">第1件：我的议题</div>
+            <div class="section-title">1.2 为什么和我有关</div>
+
+            <div class="text-card">
+                <div class="body-text">
+                    我发现自己在难过的时候，常常拍摄物品位于角落的构图——这让我开始想，角落对我是否与“难过”这一情绪相连？我想这也许不只是我一个人的事。
+                </div>
+                <div class="body-text">
+                    如果我们都能把自己的情绪板拿出来，人们可以更直观地看到彼此的差异——同样一种情绪，我们眼中的那一刻，可能有着完全不同的模样。
+                </div>
+                <div class="body-text">
+                    “甲之蜜糖，乙之砒霜”——我喜欢蜂蜜，开心时拍下它；但有人在恐惧中也拍下蜂蜜。我因此理解了他，他也知道我很喜欢蜂蜜，可以在节日赠礼时赠予我。也许这能成为我们通过视觉来共感情绪的契机。
+                </div>
+            </div>
+
+            <div class="section-title" style="margin-top:1.2rem;">1.3 在创作中的位置</div>
+            <div class="text-card">
+                <div class="body-text">
+                    这是我当前正在推进的方案，也是我持续追踪的起点——用图像理解自己，用分享连接他人。
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 3 · 第2件 · 川内伦子 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="3">
+        <div class="slide-inner">
+            <div class="page-title">第2件：谱系站位</div>
+            <div class="section-title">2.1 川内伦子 —— 碎片化图像构建氛围</div>
+
+            <div class="kawauchi-layout">
+                <div class="kawauchi-left">
+                    <div class="text-card">
+                        <div class="body-text">
+                            “从生活中最微小的细节，到自然与人文之间克制的构成，她总能捕捉事物最原始的质感。”
+                        </div>
+                        <div class="body-text">
+                            她以一组碎片化的图像构建统一氛围。“每一张照片像一个细胞”，单张有限，成组才能形成完整表达——这正是我想做的：把碎片化的情绪照片收集起来，形成可被感知的情绪版。
+                        </div>
+                        <div class="body-text">
+                            她说：“我们不需要约束自己去找寻一个必须‘有意义’的主题，只是寻求当下的感受，用当下的所见来创作。”
+                        </div>
+                        <div class="body-text" style="margin-top:0.6rem;">
+                            看完她的采访后，我不禁思索：克制的诗篇比长篇大论的介绍更能引发思考。在我们收集的、可以随时翻阅的情绪氛围图片里，是否也能在脑中反映出那一刻的我们自己？
+                        </div>
+                    </div>
+                </div>
+                <div class="kawauchi-right">
+                    <div class="img-wrap" onclick="openLightbox('./images/川内2.png')">
+                        <img src="./images/川内2.png" alt="川内伦子作品2">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 4 · 第2件 · 尤里·诺尔斯金 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="4">
+        <div class="slide-inner">
+            <div class="page-title">第2件：谱系站位</div>
+            <div class="section-title">2.2 尤里·诺尔斯金 —— 诗意化处理与意象物</div>
+
+            <div class="split-layout">
+                <div class="split-text">
+                    <div class="text-card">
+                        <div class="body-text">
+                            剧团狗咖喱自称受俄罗斯动画影响，我顺着这条线去看了诺尔斯金。
+                        </div>
+                        <div class="body-text">
+                            “他并不直接去用剧烈变化的手法触动观众，而是在节奏、画面、声音上处理得尤为诗意化，使用大量意象物，在叙事层面偏向使人们感受其氛围。”
+                        </div>
+                        <div class="body-text">
+                            他的线条和形象粗糙而超现实，有种儿童绘画的感觉，却带来一丝诡异而缓和的伤感——描绘战争伤痛的同时，舒缓的音乐和暗黄的选色又让人感到回忆与治愈。
+                        </div>
+                        <div class="body-text">
+                            人们在不同情绪下，拍摄的照片想必也有细微不同——或许是角度，或许是光的选择。这种“视觉质感”本身就在传递状态，不需要靠语言解释。
+                        </div>
+                    </div>
+                </div>
+                <div class="split-image">
+                    <div class="img-wrap" onclick="openLightbox('./images/尤里1.png')">
+                        <img src="./images/尤里1.png" alt="诺尔斯金作品1">
+                    </div>
+                    <div class="img-wrap" onclick="openLightbox('./images/尤里2.png')">
+                        <img src="./images/尤里2.png" alt="诺尔斯金作品2">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 5 · 第2件 · 剧团狗咖喱 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="5">
+        <div class="slide-inner">
+            <div class="page-title">第2件：谱系站位</div>
+            <div class="section-title">2.3 剧团狗咖喱 —— 珂拉琪拼贴与反差感</div>
+
+            <div class="split-layout">
+                <div class="split-text">
+                    <div class="text-card">
+                        <div class="body-text">
+                            “其色彩仿佛童话一般丰富浪漫，拼贴的痕迹柔和而可爱，所描绘的却是魔性的、诡谲的事物——这样的反差感反而能调动观众的感官，以反直觉的违和感带来新的审美体验。”
+                        </div>
+                        <div class="body-text">
+                            他们将真实世界的碎片拼贴进动画场景，用“拼接感”本身传递氛围——介于现实与幻想之间的惊悚与美感，在动画这一虚构媒介中制造出独特的陌生化效应。
+                        </div>
+                        <div class="body-text">
+                            这让我思考：在现实生活中，某一情绪状态下我们所看到的事物是否会不同？是否能用我们所记录的视角与事物的不同来让他人也感受到我们的情绪？
+                        </div>
+                    </div>
+                </div>
+                <div class="split-image">
+                    <div class="img-wrap" onclick="openLightbox('./images/剧团狗咖喱1.png')">
+                        <img src="./images/剧团狗咖喱1.png" alt="剧团狗咖喱作品1">
+                    </div>
+                    <div class="img-wrap" onclick="openLightbox('./images/剧团狗咖喱2.png')">
+                        <img src="./images/剧团狗咖喱2.png" alt="剧团狗咖喱作品2">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 6 · 第2件 · 反对的 + 我的位置 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="6">
+        <div class="slide-inner">
+            <div class="page-title">第2件：谱系站位</div>
+
+            <div class="section-title">2.4 反对的</div>
+            <div class="text-card">
+                <div class="body-text">不做AI心理咨询工具——情绪的病理性不能通过拍摄来判断。</div>
+                <div class="body-text">不做客观分类器——不追求“这张图属于X类”的普适判断。</div>
+            </div>
+
+            <div class="section-title" style="margin-top:1.2rem;">2.5 我的位置</div>
+            <div class="text-card">
+                <div class="body-text">
+                    我和川内伦子共享“用日常碎片构建情绪氛围”的方法，但她做的是静态的摄影书，我做的是可交互、可共享的平台——让每个人都有自己的情绪版，让人们看到差异，也看到共性。
+                </div>
+                <div class="body-text" style="margin-top:0.4rem;">
+                    她的实践让我确认了这条路是成立的，而我要做的是把它往前推一步。
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 7 · 第3件 · 3.1 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="7">
+        <div class="slide-inner">
+            <div class="page-title">第3件：我打算做啥</div>
+
+            <div class="section-title">3.1 第一阶段：个人数据集构建</div>
+            <div class="text-card">
+                <div class="body-text">
+                    在不同情绪状态（开心、难过、平静、焦虑、兴奋等）下，随时拍下自己注意到的事物。不限定主题，只要求在拍摄时记录当下的情绪状态。
+                </div>
+                <div class="body-text">
+                    依据当下感受选择滤镜，让最终图像符合那一刻的视觉感受。为每张照片贴上情绪标签（如“焦虑”“放松”“平静”），也可以补充关键词（如“角落”“暖光”“模糊”）。
+                </div>
+                <div class="body-text">
+                    标注完全由本人完成，是主观的、个人化的判断。
+                </div>
+                <div class="body-text" style="margin-top:0.6rem;">
+                    最终产出：个人情绪照片数据集（图片 + 对应的情绪标签/关键词）。
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 8 · 第3件 · 3.2 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="8">
+        <div class="slide-inner">
+            <div class="page-title">第3件：我打算做啥</div>
+
+            <div class="section-title">3.2 第二阶段：整理与可视化</div>
+            <div class="text-card">
+                <div class="body-text">
+                    将数据集整理为可视化的“情绪氛围板”——按情绪分类展示照片，观察同一情绪下拍摄的内容和色调是否有规律。
+                </div>
+                <div class="body-text">
+                    输出的视觉形式，便是“氛围图集”的形态：一系列风格统一、传递同一种感受的图片集合。
+                </div>
+                <div class="body-text" style="margin-top:0.8rem;">
+                    最终，这些情绪照片不仅仅是数据集——它们会成为每个人眼中情绪样貌的拼图。当我们在某一种情绪下反复拍到类似的构图、光线、物象，那些画面就构成了我们理解“那一刻”的视觉语言。如果把这些情绪版分享给彼此，我们可以逐渐拼凑出：原来你眼中的悲伤是这样，原来我眼中的焦虑是这样。如果更多的人参与进来，我们还能看到哪些意象更容易唤起共同的感受——这既让我们思考自己，也让我们理解彼此，同时也为创作者提供了关于“什么更容易触发氛围”的参照。
+                </div>
+                <div class="body-text" style="margin-top:0.6rem;">
+                    它最终的输出形式，可以是与亲朋好友共享的线上平台，也可以是自己收藏积累的展板——它是用来被看见、被感受、被分享的。
+                </div>
+            </div>
+
+            <div class="image-row">
+                <div class="img-wrap" onclick="openLightbox('./images/紧张.png')">
+                    <img src="./images/紧张.png" alt="紧张情绪照片">
+                </div>
+                <div class="img-wrap" onclick="openLightbox('./images/平和.png')">
+                    <img src="./images/平和.png" alt="平和情绪照片">
+                </div>
+            </div>
+            <div class="image-row-caption">“紧张”与“平和”两种情绪下的照片——角度、光线、构图的差异可见一斑</div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 9 · 第3件 · 流程图单独 -->
+    <!-- ============================================================ -->
+    <section class="slide full-image-page" data-index="9">
+        <div class="slide-inner">
+            <div class="page-title" style="margin-bottom:0.8rem;">3.3 流程图</div>
+            <div class="img-wrap" onclick="openLightbox('./images/流程图.png')">
+                <img src="./images/流程图.png" alt="流程图">
+            </div>
+            <div class="flow-caption">拍摄 → 加滤镜 → 贴标签 → 数据集整理 → AI分析 → 可视化氛围板</div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 10 · 第3件 · 3.4 + 3.5 + 3.6 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="10">
+        <div class="slide-inner">
+            <div class="page-title">第3件：我打算做啥</div>
+
+            <div class="section-title">3.4 关键节点与工具</div>
+            <div class="text-card">
+                <div class="body-text">手机相机 + 滤镜应用（采集与处理）</div>
+                <div class="body-text">百度EasyDL（零代码图像分类平台，免费版可用，不需要编程基础）</div>
+                <div class="body-text">数据集格式：图片 + 标签元数据</div>
+            </div>
+
+            <div class="section-title" style="margin-top:0.8rem;">3.5 接下来的推进</div>
+            <div class="text-card">
+                <div class="body-text">
+                    用百度EasyDL跑通一次分类测试——选2个情绪标签（如“平静”vs“焦虑”），各拍30张照片，上传训练，看AI能否区分。同时开始有意识地积累属于自己的情绪照片。
+                </div>
+            </div>
+
+            <div class="section-title" style="margin-top:0.8rem;">3.6 第三阶段：共享与连接</div>
+            <div class="text-card">
+                <div class="quote-line">“这是一个为了相连而将每个人的独特性发挥到极致的概念。”</div>
+                <div class="body-text">多人共享各自的情绪照片数据集，展示个体之间的差异与共性。</div>
+                <div class="body-text">人们可以更直观地看到彼此的差异——看到同样情绪定义下，他人眼中的那一刻。</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 11 · 第4件 · 我卡在哪 -->
+    <!-- ============================================================ -->
+    <section class="slide" data-index="11">
+        <div class="slide-inner">
+            <div class="page-title">第4件：我卡在哪</div>
+
+            <div class="text-card">
+                <div class="body-text">
+                    我尝试过用AI绘画工具做图像风格迁移，但那只做“风格转换”，不是“情绪识别”。我需要的是用AI分析照片的构图、色调、光影等视觉特征，辅助判断照片与情绪标签之间的潜在关联。
+                </div>
+                <div class="body-text" style="margin-top:0.8rem;">
+                    但我不确定具体用什么工具、怎么跑通这条路径。这和我对AI的定位一致——“AI整理而不是吞噬”。我需要让AI做“整理”和“归类”，而不是替人做“诊断”或“判断”。
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 12 · 结束页 -->
+    <!-- ============================================================ -->
+    <section class="slide slide-end" data-index="12">
+        <div class="slide-inner">
+            <div class="end-title">感谢聆听</div>
+            <div class="end-sub">也感谢你愿意看看我眼中的那一刻</div>
+            <div class="end-line">《我的时刻 — 个人情绪氛围板》</div>
+        </div>
+    </section>
+
+    <div class="nav-hint">◀ ▶ 翻页</div>
+
+    <script>
+        let current = 0;
+        const slides = document.querySelectorAll('.slide');
+        const total = slides.length;
+        const progress = document.getElementById('progress');
+
+        function goTo(index) {
+            if (index < 0) index = 0;
+            if (index >= total) index = total - 1;
+            slides.forEach((s, i) => {
+                s.classList.toggle('active', i === index);
+            });
+            current = index;
+            progress.style.width = ((index + 1) / total * 100) + '%';
+            slides[index].scrollTop = 0;
+        }
+
+        document.getElementById('navLeft').addEventListener('click', () => goTo(current - 1));
+        document.getElementById('navRight').addEventListener('click', () => goTo(current + 1));
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+                e.preventDefault();
+                goTo(current + 1);
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                goTo(current - 1);
+            }
+        });
+
+        let touchStartX = 0;
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        document.addEventListener('touchend', (e) => {
+            const diff = touchStartX - e.changedTouches[0].screenX;
+            if (diff > 40) goTo(current + 1);
+            else if (diff < -40) goTo(current - 1);
+        });
+
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
+
+        function openLightbox(src) {
+            lightboxImg.src = src;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+        }
+
+        lightbox.addEventListener('click', closeLightbox);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLightbox();
+        });
+
+        goTo(0);
+    </script>
+
+</body>
+</html>
